@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>RecruitIQ — Dashboard</title>
+<link rel="icon" href="{{ url_for('static', filename='favicon.png') }}" />
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" defer></script>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar glass">
+      <div class="brand">
+        <div class="brand-mark">RIQ</div>
+        <div><div class="brand-name">RecruitIQ</div><div class="brand-sub">Resume Intelligence</div></div>
+      </div>
+      <nav class="nav">
+        <button class="nav-item active" data-view="upload"><span>📤</span> Analyze</button>
+        <button class="nav-item" data-view="results"><span>📊</span> Results</button>
+        <button class="nav-item" data-view="history"><span>🕘</span> History</button>
+        <button class="nav-item" data-view="profile"><span>👤</span> Profile</button>
+      </nav>
+      <div class="sidebar-foot">
+        <button id="themeToggle" class="ghost-btn">🌙 Toggle theme</button>
+        <a href="{{ url_for('logout') }}" class="ghost-btn danger">↩ Logout</a>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar glass">
+        <div>
+          <h1 class="hello">Welcome back, <span id="userName">{{ user['name'] }}</span> 👋</h1>
+          <p class="muted">Let's evaluate a resume and uncover skill gaps.</p>
+        </div>
+        <div class="profile-mini">
+          <img id="avatarMini" alt="avatar" src="{% if user['avatar'] %}{{ user['avatar'] }}{% else %}{{ url_for('static', filename='avatar-default.svg') }}{% endif %}" />
+          <div>
+            <div class="pm-name">{{ user['name'] }}</div>
+            <div class="pm-mail muted">{{ user['email'] }}</div>
+          </div>
+        </div>
+      </header>
+
+      <section class="stats">
+        <div class="stat glass"><div class="stat-ico">📄</div><div><div class="stat-num" data-counter="0" id="stTotal">0</div><div class="muted">Total analyses</div></div></div>
+        <div class="stat glass"><div class="stat-ico">🎯</div><div><div class="stat-num" data-counter="0" id="stAvg">0</div><div class="muted">Avg overall score</div></div></div>
+        <div class="stat glass"><div class="stat-ico">🏅</div><div><div class="stat-num" data-counter="0" id="stBest">0</div><div class="muted">Best score</div></div></div>
+        <div class="stat glass"><div class="stat-ico">⚡</div><div><div class="stat-num" data-counter="0" id="stRecent">0</div><div class="muted">Last 7 days</div></div></div>
+      </section>
+
+      <!-- UPLOAD VIEW -->
+      <section class="view active" id="view-upload">
+        <div class="grid-2">
+          <div class="card glass">
+            <h2>Upload resume</h2>
+            <div class="dropzone" id="dropzone">
+              <input type="file" id="fileInput" accept=".pdf,.txt" hidden />
+              <div class="dz-inner">
+                <div class="dz-ico">⬆️</div>
+                <div><strong>Drag &amp; drop</strong> your PDF or TXT</div>
+                <div class="muted">or</div>
+                <button class="btn primary" id="browseBtn" type="button">Browse file</button>
+                <div class="muted small">Max 8 MB · PDF or TXT</div>
+              </div>
+            </div>
+            <div class="file-preview hidden" id="filePreview">
+              <span class="fp-ico">📎</span>
+              <span class="fp-name" id="fpName"></span>
+              <span class="fp-size muted" id="fpSize"></span>
+              <button class="icon-btn" id="removeFile" title="Remove">✕</button>
+            </div>
+          </div>
+
+          <div class="card glass">
+            <h2>Job description</h2>
+            <input type="text" id="jobTitle" class="input" placeholder="Job title (e.g. Backend Engineer)" />
+            <textarea id="jobDesc" class="textarea" rows="9" placeholder="Paste the job description here..."></textarea>
+            <div class="row between">
+              <span class="muted small"><span id="charCount">0</span> characters</span>
+              <div class="row gap">
+                <button class="btn ghost" id="sampleJD" type="button">Use sample</button>
+                <button class="btn ghost" id="clearJD" type="button">Clear</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="actions">
+          <button class="btn primary big" id="analyzeBtn">⚡ Analyze resume</button>
+        </div>
+      </section>
+
+      <!-- RESULTS VIEW -->
+      <section class="view" id="view-results">
+        <div class="empty" id="resultsEmpty">
+          <div class="empty-ico">📊</div>
+          <h3>No analysis yet</h3>
+          <p class="muted">Run an analysis from the Analyze tab to see results here.</p>
+        </div>
+        <div id="resultsContent" class="hidden">
+          <div class="grid-3">
+            <div class="card glass center">
+              <h3>Overall score</h3>
+              <div class="gauge"><canvas id="gaugeChart"></canvas><div class="gauge-text"><div class="gauge-num" id="gNum">0</div><div class="muted" id="gGrade">—</div></div></div>
+              <div class="muted" id="gLevel">—</div>
+            </div>
+            <div class="card glass">
+              <h3>Score breakdown</h3>
+              <div class="bar"><label>ATS Match</label><div class="bar-track"><div class="bar-fill" data-fill id="bATS"></div></div><span id="vATS">0</span></div>
+              <div class="bar"><label>Skills</label><div class="bar-track"><div class="bar-fill" data-fill id="bSkill"></div></div><span id="vSkill">0</span></div>
+              <div class="bar"><label>Experience</label><div class="bar-track"><div class="bar-fill" data-fill id="bExp"></div></div><span id="vExp">0</span></div>
+              <div class="bar"><label>Education</label><div class="bar-track"><div class="bar-fill" data-fill id="bEdu"></div></div><span id="vEdu">0</span></div>
+            </div>
+            <div class="card glass">
+              <h3>Skill distribution</h3>
+              <canvas id="pieChart"></canvas>
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <div class="card glass">
+              <h3>Matched skills</h3>
+              <div id="matchedSkills" class="chips"></div>
+            </div>
+            <div class="card glass">
+              <h3>Missing skills</h3>
+              <div id="missingSkills" class="chips"></div>
+            </div>
+          </div>
+
+          <div class="card glass">
+            <h3>Skill gap intelligence</h3>
+            <div class="table-wrap">
+              <table class="data-table">
+                <thead><tr><th>Skill</th><th>Priority</th><th>Time</th><th>Impact</th><th>Difficulty</th><th>Resources</th></tr></thead>
+                <tbody id="gapBody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <div class="card glass">
+              <h3>Resume improvement plan</h3>
+              <ul id="planList" class="checklist"></ul>
+            </div>
+            <div class="card glass">
+              <h3>Recommended roles</h3>
+              <div id="roleList" class="chips"></div>
+              <h4 style="margin-top:1rem">Category breakdown</h4>
+              <canvas id="barChart"></canvas>
+            </div>
+          </div>
+
+          <div class="actions">
+            <button class="btn primary big" id="downloadPdf">⬇ Download PDF report</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- HISTORY VIEW -->
+      <section class="view" id="view-history">
+        <div class="card glass">
+          <div class="row between wrap">
+            <h2>Analysis history</h2>
+            <div class="row gap">
+              <input type="text" class="input small" id="historySearch" placeholder="Search by file or job…" />
+              <select class="input small" id="historySort">
+                <option value="desc">Newest first</option>
+                <option value="asc">Oldest first</option>
+              </select>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead><tr><th>File</th><th>Job</th><th>Overall</th><th>ATS</th><th>Date</th><th>Actions</th></tr></thead>
+              <tbody id="historyBody"></tbody>
+            </table>
+          </div>
+          <div id="historyEmpty" class="empty hidden"><div class="empty-ico">🗂</div><p class="muted">No analyses yet.</p></div>
+        </div>
+      </section>
+
+      <!-- PROFILE VIEW -->
+      <section class="view" id="view-profile">
+        <div class="grid-2">
+          <div class="card glass">
+            <h2>Profile</h2>
+            <div class="avatar-row">
+              <img id="avatarBig" alt="avatar" src="{% if user['avatar'] %}{{ user['avatar'] }}{% else %}{{ url_for('static', filename='avatar-default.svg') }}{% endif %}" />
+              <div>
+                <input type="file" id="avatarInput" accept="image/*" hidden />
+                <button class="btn ghost" id="uploadAvatar" type="button">Upload picture</button>
+                <div class="muted small">PNG / JPG up to ~300 KB</div>
+              </div>
+            </div>
+            <label>Name</label>
+            <input type="text" id="pfName" class="input" value="{{ user['name'] }}" />
+            <label>Email</label>
+            <input type="email" id="pfEmail" class="input" value="{{ user['email'] }}" />
+            <button class="btn primary" id="saveProfile" type="button">Save changes</button>
+          </div>
+
+          <div class="card glass">
+            <h2>Change password</h2>
+            <label>Current password</label>
+            <input type="password" id="pwOld" class="input" />
+            <label>New password</label>
+            <input type="password" id="pwNew" class="input" />
+            <button class="btn primary" id="savePassword" type="button">Update password</button>
+
+            <hr class="sep" />
+
+            <h3 class="danger-text">Danger zone</h3>
+            <p class="muted small">Deleting your account is permanent and removes all history.</p>
+            <button class="btn danger" id="deleteAccount" type="button">Delete my account</button>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div id="toast" class="toast"></div>
+  <div id="overlay" class="overlay hidden"><div class="spinner"></div><div id="overlayText">Analyzing…</div></div>
+
+  <script src="{{ url_for('static', filename='pdf.js') }}" defer></script>
+  <script src="{{ url_for('static', filename='dashboard.js') }}" defer></script>
+  <script src="{{ url_for('static', filename='history.js') }}" defer></script>
+  <script src="{{ url_for('static', filename='script.js') }}" defer></script>
+</body>
+</html>

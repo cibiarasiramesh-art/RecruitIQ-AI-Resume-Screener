@@ -1,0 +1,35 @@
+
+[
+  {
+    "instruction": "Analyze the resume against the job description.",
+    "input": {
+      "resume": "Java, MySQL, HTML, CSS",
+      "job_description": "Backend Developer requiring Java, Spring Boot, REST APIs"
+    },
+    "output": {
+      "ats_score": 82,
+      "missing_skills": ["Spring Boot", "REST API"],
+      "recommendation": "Good Match",
+      "learning_roadmap": [
+        "Learn Spring Boot",
+        "Build REST APIs"
+      ]
+    }
+  },
+  {
+    "instruction": "Analyze the resume against the job description.",
+    "input": {
+      "resume": "Python, Flask, SQLite",
+      "job_description": "AI Engineer requiring Python, TensorFlow, Machine Learning"
+    },
+    "output": {
+      "ats_score": 75,
+      "missing_skills": ["TensorFlow", "Machine Learning"],
+      "recommendation": "Needs Improvement",
+      "learning_roadmap": [
+        "Learn TensorFlow",
+        "Study Machine Learning"
+      ]
+    }
+  }
+]
