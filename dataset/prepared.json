@@ -1,0 +1,30 @@
+[
+  {
+    "resume": "java mysql html css",
+    "job_description": "backend developer requiring java spring boot rest apis",
+    "ats_score": 82.0,
+    "missing_skills": [
+      "Spring Boot",
+      "REST API"
+    ],
+    "recommendation": "Good Match",
+    "learning_roadmap": [
+      "Learn Spring Boot",
+      "Build REST APIs"
+    ]
+  },
+  {
+    "resume": "python flask sqlite",
+    "job_description": "ai engineer requiring python tensorflow machine learning",
+    "ats_score": 75.0,
+    "missing_skills": [
+      "TensorFlow",
+      "Machine Learning"
+    ],
+    "recommendation": "Needs Improvement",
+    "learning_roadmap": [
+      "Learn TensorFlow",
+      "Study Machine Learning"
+    ]
+  }
+]

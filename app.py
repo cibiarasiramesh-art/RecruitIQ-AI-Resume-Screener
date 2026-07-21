@@ -27,7 +27,7 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, ListFlowabl
 from reportlab.lib.styles import getSampleStyleSheet
 
 from services.recruitiq_ai import analyze_resume as ai_analyzer
-from models.custom_resume_model import MODEL_PATH, load_model
+from models.custom_resume_model import MODEL_PATH, load_model, predict_resume_match
 
 # ----------------------------------------------------------------------
 # App configuration
@@ -1031,3 +1031,4 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"Local model load failed: {e}")
     app.run(host="0.0.0.0", port=port, debug=False)
+
